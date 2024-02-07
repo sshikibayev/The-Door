@@ -55,6 +55,14 @@ protected:
     void OnDestroySessionComplete(FName SessionName, bool bWasSuccessful);
     void OnStartSessionComplete(FName SessionName, bool bWasSuccessful);
 
+    bool IsValidSessionInterface();
+
+    void OnCreateSessionBroadcast(bool bStatus);
+    void OnFindSessionBroadcast(const TArray<FOnlineSessionSearchResult>& SessionResults, bool bWasSuccsessful);
+    void OnJoinSessionBroadcast(EOnJoinSessionCompleteResult::Type Result);
+    void OnStartSessionBroadcast(bool bWasSuccsessful);
+    void OnDestroySessionBroadcast(bool bWasSuccsessful);
+
 private:
     IOnlineSessionPtr SessionInterface;
     TSharedPtr<FOnlineSessionSettings> LastSessionSettings;

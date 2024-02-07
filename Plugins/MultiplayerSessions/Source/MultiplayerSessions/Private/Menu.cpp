@@ -16,14 +16,19 @@ void UMenu::SetupMenu(int32 NumberOfPublicConnections, FString TypeOfMatch, FStr
     MatchType = TypeOfMatch;
     PathToLobby = FString::Printf(TEXT("%s?listen"), *LobbyPath);
 
-    AddToViewport();
-    SetVisibility(ESlateVisibility::Visible);
-    bIsFocusable = true;
+    if (!IsInViewport())
+    {
+        AddToViewport();
+        SetVisibility(ESlateVisibility::Visible);
+        bIsFocusable = true;
+    }
 
-    TObjectPtr<UWorld> World = GetWorld();
-    if (!World) return;
+    if (!GetWorld())
+    {
+        return;
+    }
 
-    APlayerController* PlayerController = World->GetFirstPlayerController();
+    APlayerController* PlayerController = GetWorld()->GetFirstPlayerController();
     if (PlayerController)
     {
         FInputModeUIOnly InputModeData;
@@ -34,13 +39,12 @@ void UMenu::SetupMenu(int32 NumberOfPublicConnections, FString TypeOfMatch, FStr
         PlayerController->SetShowMouseCursor(true);
     }
 
-    UGameInstance* GameInstance = GetGameInstance();
-    if (GameInstance)
+    if (TObjectPtr<UGameInstance> GameInstance = GetGameInstance())
     {
         MultiplayerSessionsSubsystem = GameInstance->GetSubsystem<UMultiplayerSessionsSubsystem>();
     }
 
-    if (MultiplayerSessionsSubsystem)
+    if (IsValid(MultiplayerSessionsSubsystem))
     {
         MultiplayerSessionsSubsystem->MultiplayerOnCreateSessionComplete.AddDynamic(this, &ThisClass::OnCreateSession);
         MultiplayerSessionsSubsystem->MultiplayerOnFindSessionsComplete.AddUObject(this, &ThisClass::OnFindSessions);
@@ -50,11 +54,11 @@ void UMenu::SetupMenu(int32 NumberOfPublicConnections, FString TypeOfMatch, FStr
     }
 }
 
-FText UMenu::GetPlayerNickname()
+FText UMenu::GetPlayerName()
 {
-    if (ET_Nickname)
+    if (ET_PlayerName)
     {
-        return ET_Nickname->GetText();
+        return ET_PlayerName->GetText();
     }
 
     return FText::FromString(TEXT("Unknown"));
@@ -67,11 +71,7 @@ bool UMenu::Initialize()
         return false;
     }
 
-    if (BTN_Host && BTN_Join)
-    {
-        BTN_Host->OnClicked.AddDynamic(this, &ThisClass::HostBtnClicked);
-        BTN_Join->OnClicked.AddDynamic(this, &ThisClass::JoinBtnClicked);
-    }
+    AddDelegates();
 
     return true;
 }
@@ -89,10 +89,12 @@ void UMenu::OnCreateSession(bool bWasSuccessful)
     {
         UE_LOG(LogTemp, Warning, TEXT("bWasSuccessful: true"));
 
-        TObjectPtr<UWorld> World = GetWorld();
-        if (!World) return;
+        if (!GetWorld())
+        {
+            return;
+        }
 
-        World->ServerTravel(PathToLobby);
+        GetWorld()->ServerTravel(PathToLobby);
     }
     else
     {
@@ -104,7 +106,10 @@ void UMenu::OnCreateSession(bool bWasSuccessful)
 
 void UMenu::OnFindSessions(const TArray<FOnlineSessionSearchResult>& SessionResults, bool bWasSuccessful)
 {
-    if (!MultiplayerSessionsSubsystem) return;
+    if (!MultiplayerSessionsSubsystem)
+    {
+        return;
+    }
 
     for (auto Result : SessionResults)
     {
@@ -125,8 +130,7 @@ void UMenu::OnFindSessions(const TArray<FOnlineSessionSearchResult>& SessionResu
 
 void UMenu::OnJoinSession(EOnJoinSessionCompleteResult::Type Result)
 {
-    IOnlineSubsystem* Subsystem = IOnlineSubsystem::Get();
-    if (Subsystem)
+    if (TObjectPtr<IOnlineSubsystem> Subsystem = IOnlineSubsystem::Get())
     {
         IOnlineSessionPtr SessionInterface = Subsystem->GetSessionInterface();
 
@@ -135,8 +139,7 @@ void UMenu::OnJoinSession(EOnJoinSessionCompleteResult::Type Result)
             FString Address;
             SessionInterface->GetResolvedConnectString(NAME_GameSession, Address);
 
-            APlayerController* PlayerController = GetGameInstance()->GetFirstLocalPlayerController();
-            if (PlayerController)
+            if (TObjectPtr<APlayerController> PlayerController = GetGameInstance()->GetFirstLocalPlayerController())
             {
                 PlayerController->ClientTravel(Address, ETravelType::TRAVEL_Absolute);
             }
@@ -183,15 +186,56 @@ void UMenu::JoinBtnClicked()
     }
 }
 
+void UMenu::QuitBtnClicked()
+{
+    if (GetWorld())
+    {
+        UGameplayStatics::GetPlayerController(GetWorld(), 0)->ConsoleCommand("quit");
+    }
+}
+
+void UMenu::AddDelegates()
+{
+    if (BTN_Host && BTN_Join)
+    {
+        BTN_Host->OnClicked.AddDynamic(this, &ThisClass::HostBtnClicked);
+        BTN_Join->OnClicked.AddDynamic(this, &ThisClass::JoinBtnClicked);
+        BTN_Quit->OnClicked.AddDynamic(this, &ThisClass::QuitBtnClicked);
+    }
+}
+
+void UMenu::RemoveDelegates()
+{
+    if (BTN_Host && BTN_Join)
+    {
+        BTN_Host->OnClicked.RemoveDynamic(this, &ThisClass::HostBtnClicked);
+        BTN_Join->OnClicked.RemoveDynamic(this, &ThisClass::JoinBtnClicked);
+        BTN_Quit->OnClicked.RemoveDynamic(this, &ThisClass::QuitBtnClicked);
+    }
+}
+
+void UMenu::CleaningPointers()
+{
+    BTN_Host = nullptr;
+    BTN_Join = nullptr;
+    ET_PlayerName = nullptr;
+    MultiplayerSessionsSubsystem = nullptr;
+}
+
 void UMenu::MenuTearDown()
 {
     RemoveFromParent();
 
-    TObjectPtr<UWorld> World = GetWorld();
-    if (!World) return;
-    APlayerController* PlayerController = World->GetFirstPlayerController();
+    if (!GetWorld())
+    {
+        return;
+    }
 
-    if (PlayerController)
+    RemoveDelegates();
+
+    CleaningPointers();
+
+    if (TObjectPtr<APlayerController> PlayerController = GetWorld()->GetFirstPlayerController())
     {
         FInputModeGameOnly InputModeData;
         PlayerController->SetInputMode(InputModeData);

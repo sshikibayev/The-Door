@@ -29,7 +29,7 @@ public:
     UFUNCTION(BlueprintCallable)
     void SetupMenu(int32 NumberOfPublicConnections = 4, FString TypeOfMatch = "FreeForAll", FString LobbyPath = "/Game/ThirdPerson/Maps/Lobby");
     UFUNCTION(BlueprintCallable)
-    FText GetPlayerNickname();
+    FText GetPlayerName();
 
 protected:
     virtual bool Initialize() override;
@@ -49,11 +49,13 @@ protected:
 
 private:
     UPROPERTY(meta = (BindWidget))
-    TObjectPtr<UEditableText> ET_Nickname;
+    TObjectPtr<UEditableText> ET_PlayerName;
     UPROPERTY(meta = (BindWidget))
     TObjectPtr<UButton> BTN_Host;
     UPROPERTY(meta = (BindWidget))
     TObjectPtr<UButton> BTN_Join;
+    UPROPERTY(meta = (BindWidget))
+    TObjectPtr<UButton> BTN_Quit;
 
     int32 NumPublicConnections{ 4 };
     FString MatchType{ "FreeForAll" };
@@ -66,6 +68,11 @@ private:
     void HostBtnClicked();
     UFUNCTION()
     void JoinBtnClicked();
+    UFUNCTION()
+    void QuitBtnClicked();
 
+    void AddDelegates();
+    void RemoveDelegates();
+    void CleaningPointers();
     void MenuTearDown();
 };
