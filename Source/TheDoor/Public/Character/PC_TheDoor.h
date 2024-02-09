@@ -4,24 +4,18 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/PlayerController.h"
-#include "PC_TheDoorCharacter.generated.h"
+
+#include "PC_TheDoor.generated.h"
 
 
 UCLASS()
-class THEDOOR_API APC_TheDoorCharacter : public APlayerController
+class THEDOOR_API APC_TheDoor : public APlayerController
 {
 	GENERATED_BODY()
 
-public:
-    FORCEINLINE FText GetPlayerName()
-    {
-        return PlayerName;
-    }
-
 protected:
     virtual void PostInitializeComponents() override;
-
-private:
-    FText PlayerName;
-
+    virtual void BeginPlay() override;
+    virtual void OnPossess(APawn* aPawn) override;
+    virtual void Tick(float DeltaSeconds) override;
 };

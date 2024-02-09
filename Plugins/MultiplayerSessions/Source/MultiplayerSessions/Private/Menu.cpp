@@ -87,8 +87,6 @@ void UMenu::OnCreateSession(bool bWasSuccessful)
 {
     if (bWasSuccessful)
     {
-        UE_LOG(LogTemp, Warning, TEXT("bWasSuccessful: true"));
-
         if (!GetWorld())
         {
             return;
@@ -99,7 +97,6 @@ void UMenu::OnCreateSession(bool bWasSuccessful)
     else
     {
         UE_LOG(LogTemp, Error, TEXT("Session creation failed"));
-
         BTN_Host->SetIsEnabled(true);
     }
 }
