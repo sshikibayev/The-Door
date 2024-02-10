@@ -6,16 +6,24 @@
 #include "EnhancedInputSubsystems.h"
 #include "EnhancedInputComponent.h"
 #include "Components/WidgetComponent.h"
+#include "Components/BoxComponent.h"
 #include "Net/UnrealNetwork.h"
 
+#include "Interfaces/Interactable.h"
 #include "Widgets/W_PlayerNickname.h"
 #include "Character/PS_TheDoor.h"
 
+
 ATheDoorMainCharacter::ATheDoorMainCharacter()
 {
+    BC_InteractionArea = CreateDefaultSubobject<UBoxComponent>(TEXT("InteractionArea"));
+    BC_InteractionArea->SetCollisionProfileName(TEXT("OverlapAll"));
+    BC_InteractionArea->SetupAttachment(GetRootComponent());
+
     WC_Nickname = CreateDefaultSubobject<UWidgetComponent>(TEXT("PlayerNicknameWidget"));
     WC_Nickname->SetupAttachment(GetRootComponent());
     WC_Nickname->SetWidgetSpace(EWidgetSpace::Screen);
+    WC_Nickname->SetupAttachment(GetRootComponent());
 }
 
 void ATheDoorMainCharacter::PostInitializeComponents()
@@ -39,6 +47,12 @@ void ATheDoorMainCharacter::BeginPlay()
         {
             WC_Nickname->SetVisibility(bNicknameVisible);
         }
+    }
+
+    if (HasAuthority() && IsValid(BC_InteractionArea))
+    {
+        BC_InteractionArea->OnComponentBeginOverlap.AddDynamic(this, &ThisClass::OnOverlapBegin);
+        BC_InteractionArea->OnComponentEndOverlap.AddDynamic(this, &ThisClass::OnOverlapEnd);
     }
 }
 
@@ -125,6 +139,22 @@ void ATheDoorMainCharacter::OnRep_Nickname()
     UpdatePlayerNicknameWidget(Nickname);
 }
 
+void ATheDoorMainCharacter::OnOverlapBegin(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
+{
+    if (IsValid(OtherActor) && OtherActor != this && OtherActor->ActorHasTag(DoorData.GetInteractiveTag()))
+    {
+        Interactive = OtherActor;
+    }
+}
+
+void ATheDoorMainCharacter::OnOverlapEnd(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex)
+{
+    if (Interactive)
+    {
+        Interactive = nullptr;
+    }
+}
+
 bool ATheDoorMainCharacter::IsPlayerAController()
 {
     if (IsValid(GetController()))
@@ -137,5 +167,25 @@ bool ATheDoorMainCharacter::IsPlayerAController()
 
 void ATheDoorMainCharacter::Interact()
 {
+    if (HasAuthority())
+    {
+        if (IsValid(Interactive))
+        {
+            TObjectPtr<IInteractable> InteractObject{ Cast<IInteractable>(Interactive) };
+            if (InteractObject)
+            {
+                InteractObject->Interact();
+            }
+        }
+    }
+    else
+    {
+        ServerMakeInteraction();
+    }
 
+}
+
+void ATheDoorMainCharacter::ServerMakeInteraction_Implementation()
+{
+    Interact();
 }
