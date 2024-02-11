@@ -12,7 +12,7 @@ class UMenu;
 UCLASS()
 class THEDOOR_API APC_MainMenu : public APlayerController
 {
-	GENERATED_BODY()
+    GENERATED_BODY()
 
 public:
     UPROPERTY(EditAnywhere)

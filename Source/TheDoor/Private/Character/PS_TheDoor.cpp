@@ -3,31 +3,15 @@
 
 #include "Character/PS_TheDoor.h"
 
-#include "Kismet/GameplayStatics.h"
-#include "Net/UnrealNetwork.h"
-
 #include "Game Settings/GI_Default.h"
 
 void APS_TheDoor::PostInitializeComponents()
 {
     Super::PostInitializeComponents();
 
-    if (GetNetMode() == ENetMode::NM_ListenServer)
+    if (!IsRunningDedicatedServer())
     {
-        GI_Default = Cast<UGI_Default>(GetGameInstance());
-        if (IsValid(GI_Default))
-        {
-           PlayerNickname = GI_Default->GetPlayerName();
-        }
-    }
-
-    if (!HasAuthority())
-    {
-        GI_Default = Cast<UGI_Default>(GetGameInstance());
-        if (IsValid(GI_Default))
-        {
-            PlayerNickname = GI_Default->GetPlayerName();
-        }
+        InitializePlayerNickname();
     }
 }
 
@@ -37,8 +21,11 @@ void APS_TheDoor::BeginPlay()
 
 }
 
-void APS_TheDoor::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+void APS_TheDoor::InitializePlayerNickname()
 {
-    Super::GetLifetimeReplicatedProps(OutLifetimeProps);
-
+    GI_Default = Cast<UGI_Default>(GetGameInstance());
+    if (IsValid(GI_Default))
+    {
+        PlayerNickname = GI_Default->GetPlayerName();
+    }
 }

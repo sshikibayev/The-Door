@@ -7,8 +7,6 @@
 
 #include "PS_TheDoor.generated.h"
 
-DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnPlayerNicknameSet);
-
 class UGI_Default;
 
 UCLASS()
@@ -17,8 +15,6 @@ class THEDOOR_API APS_TheDoor : public APlayerState
     GENERATED_BODY()
 
 public:
-    FOnPlayerNicknameSet OnPlayerNicknameSet;
-
     FORCEINLINE FText GetPlayerNickname()
     {
         return PlayerNickname;
@@ -27,11 +23,12 @@ public:
 protected:
     virtual void PostInitializeComponents() override;
     virtual void BeginPlay() override;
-    virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
 private:
     FText PlayerNickname{ FText::FromString("Unknown") };
 
     UPROPERTY()
     TObjectPtr<UGI_Default> GI_Default;
+
+    void InitializePlayerNickname();
 };
