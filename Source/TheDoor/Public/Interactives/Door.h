@@ -36,7 +36,7 @@ protected:
     virtual void Tick(float DeltaTime) override;
     virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
     virtual void Interact() override;
-    virtual void ToggleDoor();
+    virtual void AuthToggleDoor();
 
     UFUNCTION()
     void OnRep_DoorState();

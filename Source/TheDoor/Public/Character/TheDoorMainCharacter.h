@@ -47,6 +47,8 @@ protected:
     UPROPERTY()
     TObjectPtr<APS_TheDoor> PS_TheDoor;
 
+    FName InteractiveTag;
+
     virtual void BeginPlay() override;
     virtual void PostInitializeComponents() override;
     virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
@@ -78,6 +80,9 @@ private:
     UPROPERTY()
     FTheDoorData DoorData;
 
+    UFUNCTION()
+    void MakeInteraction();
+
     UFUNCTION(Server, Reliable)
     void ServerSetNickname(const FText& NewNickname);
     UFUNCTION(Server, Unreliable)
@@ -85,6 +90,4 @@ private:
 
     UFUNCTION()
     void OnRep_Nickname();
-
-    bool IsPlayerAController();
 };

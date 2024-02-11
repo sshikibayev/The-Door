@@ -15,7 +15,14 @@ public:
         return InteractiveTag;
     }
 
+    FORCEINLINE FName GetPlayerTag()
+    {
+        return PlayerTag;
+    }
+
 private:
     UPROPERTY(VisibleAnywhere, Category = Tag)
     FName InteractiveTag{ "Interactive" };
+    UPROPERTY(VisibleAnywhere, Category = Tag)
+    FName PlayerTag{ "TheDoorPlayer" };
 };

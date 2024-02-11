@@ -12,5 +12,6 @@ class THEDOOR_API AGM_TheDoor : public AGameMode
 {
 	GENERATED_BODY()
 
-
+protected:
+    virtual void OnPostLogin(AController* NewPlayer) override;
 };

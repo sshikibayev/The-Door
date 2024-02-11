@@ -3,8 +3,6 @@
 
 #include "Character/PC_TheDoor.h"
 
-#include "Character/TheDoorMainCharacter.h"
-
 
 void APC_TheDoor::PostInitializeComponents()
 {

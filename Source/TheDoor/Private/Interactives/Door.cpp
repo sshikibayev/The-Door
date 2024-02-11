@@ -8,6 +8,7 @@
 ADoor::ADoor()
 {
 	PrimaryActorTick.bCanEverTick = true;
+    bReplicates = true;
 
     DoorMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("DoorMesh"));
     SetRootComponent(DoorMesh);
@@ -21,7 +22,6 @@ void ADoor::BeginPlay()
 {
 	Super::BeginPlay();
 
-    SetReplicates(true);
     SetReplicateMovement(true);
 
     InitialLocation = GetActorLocation();
@@ -39,15 +39,17 @@ void ADoor::Tick(float DeltaTime)
 
 void ADoor::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
+    Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+
     DOREPLIFETIME_CONDITION(ThisClass, bIsOpen, COND_SkipOwner);
 }
 
 void ADoor::Interact()
 {
-    ToggleDoor();
+    AuthToggleDoor();
 }
 
-void ADoor::ToggleDoor()
+void ADoor::AuthToggleDoor()
 {
     if (HasAuthority())
     {

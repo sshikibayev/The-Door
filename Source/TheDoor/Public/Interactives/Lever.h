@@ -10,15 +10,16 @@
 #include "Lever.generated.h"
 
 class UBoxComponent;
-struct FTheDoorData;
+class UWidgetComponent;
+class UW_ButtonNotification;
 
 UCLASS()
 class THEDOOR_API ALever : public AActor, public IInteractable
 {
-	GENERATED_BODY()
+    GENERATED_BODY()
 
 public:
-	ALever();
+    ALever();
 
 protected:
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Mesh)
@@ -26,13 +27,36 @@ protected:
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Interaction)
     TObjectPtr<UBoxComponent> BC_InteractionArea;
 
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = UI)
+    TObjectPtr<UWidgetComponent> WC_ButtonNotification;
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = UI)
+    TSubclassOf<UW_ButtonNotification> W_ButtonNotificationClass;
+
     UPROPERTY(EditAnywhere, Category = Target)
     TObjectPtr<AActor> Target;
 
     UPROPERTY()
     FTheDoorData DoorData;
 
-	virtual void BeginPlay() override;
-	virtual void Tick(float DeltaTime) override;
+    FName PlayerTag;
+    bool bInteracted;
+
+    virtual void BeginPlay() override;
+    virtual void Tick(float DeltaTime) override;
     virtual void Interact() override;
+
+    UFUNCTION()
+    virtual void OnOverlapBegin(class UPrimitiveComponent* OverlappedComp, class AActor* OtherActor, class UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
+
+    UFUNCTION()
+    virtual void OnOverlapEnd(class UPrimitiveComponent* OverlappedComp, class AActor* OtherActor, class UPrimitiveComponent* OtherComp, int32 OtherBodyIndex);
+
+    virtual void CreateButtonNotificationWidget();
+
+private:
+    UPROPERTY()
+    TObjectPtr<UW_ButtonNotification> WBP_ButtonNotification;
+
+    void ShowButtonWidget();
+    void HideButtonWidget();
 };

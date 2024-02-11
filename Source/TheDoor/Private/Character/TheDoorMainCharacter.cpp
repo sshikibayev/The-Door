@@ -24,6 +24,9 @@ ATheDoorMainCharacter::ATheDoorMainCharacter()
     WC_Nickname->SetupAttachment(GetRootComponent());
     WC_Nickname->SetWidgetSpace(EWidgetSpace::Screen);
     WC_Nickname->SetupAttachment(GetRootComponent());
+
+    Tags.Add(DoorData.GetPlayerTag());
+    InteractiveTag = DoorData.GetInteractiveTag();
 }
 
 void ATheDoorMainCharacter::PostInitializeComponents()
@@ -31,7 +34,7 @@ void ATheDoorMainCharacter::PostInitializeComponents()
     Super::PostInitializeComponents();
 
     //Create a nickname widget for every instance of the Character.
-    if (GetNetMode() != ENetMode::NM_DedicatedServer)
+    if (!IsRunningDedicatedServer())
     {
         CreatePlayerNicknameWidget();
     }
@@ -41,9 +44,9 @@ void ATheDoorMainCharacter::BeginPlay()
 {
     Super::BeginPlay();
 
-    if (GetNetMode() != ENetMode::NM_DedicatedServer)
+    if (!IsRunningDedicatedServer() && IsLocallyControlled())
     {
-        if (IsValid(WC_Nickname) && IsPlayerAController() && !bNicknameVisible)
+        if (IsValid(WC_Nickname) && !bNicknameVisible)
         {
             WC_Nickname->SetVisibility(bNicknameVisible);
         }
@@ -70,6 +73,9 @@ void ATheDoorMainCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>
 {
     Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
+    //Replicate every copy,
+    //because we need to know what player's nickname
+    //even if it is not shown.
     DOREPLIFETIME(ThisClass, Nickname);
 }
 
@@ -77,9 +83,7 @@ void ATheDoorMainCharacter::PossessedBy(AController* NewController)
 {
     Super::PossessedBy(NewController);
 
-    //Update a nickname widget only for,
-    //Listen Server as a player.
-    if (IsPlayerAController())
+    if (IsLocallyControlled())
     {
         if (PS_TheDoor = Cast<APS_TheDoor>(GetPlayerState()))
         {
@@ -96,7 +100,7 @@ void ATheDoorMainCharacter::OnRep_PlayerState()
     //When client's PS is ready,
     //get the client copy only and update,
     //the name for the server.
-    if (IsValid(GetOwner()))
+    if (IsLocallyControlled())
     {
         if (PS_TheDoor = Cast<APS_TheDoor>(GetPlayerState()))
         {
@@ -141,7 +145,7 @@ void ATheDoorMainCharacter::OnRep_Nickname()
 
 void ATheDoorMainCharacter::OnOverlapBegin(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
-    if (IsValid(OtherActor) && OtherActor != this && OtherActor->ActorHasTag(DoorData.GetInteractiveTag()))
+    if (IsValid(OtherActor) && OtherActor->ActorHasTag(InteractiveTag))
     {
         Interactive = OtherActor;
     }
@@ -149,40 +153,35 @@ void ATheDoorMainCharacter::OnOverlapBegin(UPrimitiveComponent* OverlappedComp, 
 
 void ATheDoorMainCharacter::OnOverlapEnd(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex)
 {
-    if (Interactive)
+    if (IsValid(OtherActor) && OtherActor->ActorHasTag(InteractiveTag))
     {
         Interactive = nullptr;
     }
-}
-
-bool ATheDoorMainCharacter::IsPlayerAController()
-{
-    if (IsValid(GetController()))
-    {
-        return GetController()->IsLocalPlayerController();
-    }
-
-    return false;
 }
 
 void ATheDoorMainCharacter::Interact()
 {
     if (HasAuthority())
     {
-        if (IsValid(Interactive))
-        {
-            TObjectPtr<IInteractable> InteractObject{ Cast<IInteractable>(Interactive) };
-            if (InteractObject)
-            {
-                InteractObject->Interact();
-            }
-        }
+        MakeInteraction();
     }
     else
     {
         ServerMakeInteraction();
     }
 
+}
+
+void ATheDoorMainCharacter::MakeInteraction()
+{
+    if (IsValid(Interactive))
+    {
+        TObjectPtr<IInteractable> InteractObject{ Cast<IInteractable>(Interactive) };
+        if (InteractObject)
+        {
+            InteractObject->Interact();
+        }
+    }
 }
 
 void ATheDoorMainCharacter::ServerMakeInteraction_Implementation()
